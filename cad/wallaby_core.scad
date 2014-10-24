@@ -12,6 +12,12 @@ _al_shrink = 0.98;
 _scale = _desired_scale / _al_shrink;
 
 //------------------------------------------------------------------
+// control the number of facets on cylinders
+
+_accuracy = 0.001;
+function fn(r) = 180.0 / acos(1 - (_accuracy / r));
+
+//------------------------------------------------------------------
 // cylinder cores
 
 cylinder_d = (7/8); // diameter
@@ -22,7 +28,7 @@ cylinder_r = cylinder_d / 2.0;
 
 module cylinder_core(d) {
 	translate([0, d, 0]) {
-		cylinder(h = cylinder_h, r = cylinder_r);
+		cylinder(h = cylinder_h, r = cylinder_r, $fn = fn(cylinder_r));
 	}
 }
 
@@ -44,7 +50,7 @@ camshaft_r = camshaft_d / 2.0;
 module camshaft_core() {
 	translate([camshaft_dx, 0, camshaft_dz]) {
 		rotate([90, 0, 0]) {
-			cylinder(h = camshaft_l, r = camshaft_r, center = true);
+			cylinder(h = camshaft_l, r = camshaft_r, center = true, $fn = fn(camshaft_r));
 		}
 	}
 }
