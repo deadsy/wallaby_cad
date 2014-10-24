@@ -40,7 +40,7 @@ module cylinder_cores() {
 //------------------------------------------------------------------
 // camshaft core
 
-camshaft_d = (7/8); // diameter
+camshaft_d = (3/4); // diameter
 camshaft_l = 4.0; // length
 camshaft_dx = (1 + (1/8)); // x-displacement
 camshaft_dz = 1.084; // z-displacement
@@ -70,9 +70,36 @@ module water_jacket_core() {
 }
 
 //------------------------------------------------------------------
+// body outline
+
+module body_outline() {
+	 color([0,1.0,0,0.2])
+    rotate([90,0,0])
+    linear_extrude(height = camshaft_l, center = true)
+    import(file = "engine_body_outline.dxf", $fn = fn(0.25));
+}
+
+//------------------------------------------------------------------
+// lower cores
+
+module lower_core(d) {
+    translate([0, d, 0])
+    rotate([90,0,0])
+    linear_extrude(height = cylinder_d, center = true)
+    import(file = "lower_core.dxf", layer = "lower_core", $fn = fn(0.25));
+}
+
+module lower_cores() {
+	lower_core(-c2c_d / 2.0);
+	lower_core(c2c_d / 2.0);
+}
+
+//------------------------------------------------------------------
 
 cylinder_cores();
+lower_cores();
 water_jacket_core();
 camshaft_core();
+body_outline();
 
 //------------------------------------------------------------------
