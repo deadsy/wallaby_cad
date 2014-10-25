@@ -13,3 +13,4 @@ Gives:
 
 Scaling from original dimensions for Al casting patterns = 1.276
 
+![Wallably Engine Block with Core](pics/wallaby_core.png "Wallaby Engine Block with Core")
