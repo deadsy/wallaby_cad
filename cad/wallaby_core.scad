@@ -20,7 +20,12 @@ function fn(r) = 180 / acos(1 - (_accuracy / r));
 //------------------------------------------------------------------
 // cylinder cores
 
-cylinder_d = (7/8); // diameter
+// unscaled sizes: core = 0.875, cylinder bore = 1.000, liner bore = 1.125
+// scaled sizes: core = 1.125, cylinder bore = 1.25, liner bore = 1.406
+// So: In the scaled engine we have core size that matches a standard dowel and > 1/4"
+// of machining tolerance on the liner bore diameter.
+
+cylinder_d = (1 + (1/8)) / _scale; // diameter
 cylinder_h = (3 + (5/16)); // height
 c2c_d = (1 + (3/8));
 
