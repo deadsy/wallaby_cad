@@ -15,7 +15,7 @@ _scale = _desired_scale / _al_shrink;
 // control the number of facets on cylinders
 
 _accuracy = 0.001;
-function fn(r) = 180.0 / acos(1 - (_accuracy / r));
+function fn(r) = 180 / acos(1 - (_accuracy / r));
 
 //------------------------------------------------------------------
 // cylinder cores
@@ -41,7 +41,7 @@ module cylinder_cores() {
 // camshaft core
 
 camshaft_d = (3/4); // diameter
-camshaft_l = 4.0; // length
+camshaft_l = 2 + (3/8); // length
 camshaft_dx = (1 + (1/8)); // x-displacement
 camshaft_dz = 1.084; // z-displacement
 
@@ -72,26 +72,30 @@ module water_jacket_core() {
 //------------------------------------------------------------------
 // body outline
 
+body_l = 3 + (1/8);
+
 module body_outline() {
-	 color([0,1.0,0,0.2])
+	 color([0,1,0,0.3])
     rotate([90,0,0])
-    linear_extrude(height = camshaft_l, center = true)
+    linear_extrude(height = body_l, center = true)
     import(file = "engine_body_outline.dxf", $fn = fn(0.25));
 }
 
 //------------------------------------------------------------------
 // lower cores
 
+lower_sy = 1;
+
 module lower_core(d) {
     translate([0, d, 0])
     rotate([90,0,0])
-    linear_extrude(height = cylinder_d, center = true)
+    linear_extrude(height = lower_sy, center = true)
     import(file = "lower_core.dxf", layer = "lower_core", $fn = fn(0.25));
 }
 
 module lower_cores() {
-	lower_core(-c2c_d / 2.0);
-	lower_core(c2c_d / 2.0);
+	lower_core(-c2c_d / 2);
+	lower_core(c2c_d / 2);
 }
 
 //------------------------------------------------------------------
