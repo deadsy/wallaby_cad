@@ -27,13 +27,14 @@ function fn(r) = 180 / acos(1 - (_accuracy / r));
 
 cylinder_d = (1 + (1/8)) / _scale; // diameter
 cylinder_h = (3 + (5/16)); // height
+core_print_h = 1;
 c2c_d = (1 + (3/8));
 
 cylinder_r = cylinder_d / 2.0;
 
 module cylinder_core(d) {
 	translate([0, d, 0]) {
-		cylinder(h = cylinder_h, r = cylinder_r, $fn = fn(cylinder_r));
+		cylinder(h = cylinder_h + core_print_h, r = cylinder_r, $fn = fn(cylinder_r));
 	}
 }
 
@@ -104,9 +105,29 @@ module lower_cores() {
 }
 
 //------------------------------------------------------------------
+// lower core prints
+
+lcp_sx = 2 + (1/8);
+lcp_sy = lower_sy;
+lcp_sz = 1;
+lcp_dz = - (lcp_sz / 2);
+
+module lower_core_print(d) {
+    translate([0, d, lcp_dz]) {
+        cube(size = [lcp_sx, lcp_sy, lcp_sz], center = true);
+	 }
+}
+
+module lower_core_prints() {
+	lower_core_print(-c2c_d / 2);
+	lower_core_print(c2c_d / 2);
+}
+
+//------------------------------------------------------------------
 
 cylinder_cores();
 lower_cores();
+lower_core_prints();
 water_jacket_core();
 camshaft_core();
 body_outline();
