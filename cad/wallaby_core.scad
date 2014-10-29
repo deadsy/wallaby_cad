@@ -69,7 +69,7 @@ wj_sy = 2 + (7/8);
 module water_jacket_core() {
     rotate([90,0,0])
     linear_extrude(height = wj_sy, center = true)
-    import(file = "engine_body.dxf", layer = "water_jacket", $fn = fn(0.25));
+    import(file = "engine_body.dxf", layer = "water_jacket", $fn = fn(0.125));
 }
 
 //------------------------------------------------------------------
@@ -93,7 +93,7 @@ module lower_core(d) {
     translate([0, d, 0])
     rotate([90,0,0])
     linear_extrude(height = lower_sy, center = true)
-    import(file = "engine_body.dxf", layer = "lower_core", $fn = fn(0.25));
+    import(file = "engine_body.dxf", layer = "lower_core", $fn = fn(8.0));
 }
 
 module lower_cores() {
