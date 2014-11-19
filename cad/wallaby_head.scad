@@ -12,6 +12,12 @@ _al_shrink = 0.98;
 _scale = _desired_scale / _al_shrink;
 
 //------------------------------------------------------------------
+// tweak a height to avpoid rendering issues when diff-ed surfaces
+// align with each other.
+
+tweak = 0.001;
+
+//------------------------------------------------------------------
 // control the number of facets on cylinders
 
 _accuracy = 0.001;
@@ -44,21 +50,66 @@ module cylinder_heads() {
 }
 
 //------------------------------------------------------------------
+// cylinder head wall
 
-head_h = (1/2) + (3/8);
+head_h_lower = 1/2;
+head_h_upper = 3/8;
+head_h = head_h_upper + head_h_lower;
+head_draft_outer = [1.01,1.01];
+head_draft_inner = [0.98,0.98];
 
-module head_walls() {
-    linear_extrude(height = head_h, center = true)
-    difference() {
-	    import(file = "head_cover.dxf", layer = "head_wall_outer", $fn = fn(0.25));
-	    import(file = "head_cover.dxf", layer = "head_wall_inner", $fn = fn(0.25));
-	    import(file = "head_cover.dxf", layer = "head_wall_holes", $fn = fn(0.125));
+module head_outer() {
+  translate([0,0,-head_h_lower]) {
+    linear_extrude(height = head_h_lower, scale = head_draft_outer)
+    import(file = "head_cover.dxf", layer = "head_wall_outer", $fn = fn(0.25));
+  }
+  translate([0,0,head_h_upper]) {
+    rotate([0,180,0]) {
+      linear_extrude(height = head_h_upper, scale = head_draft_outer)
+      import(file = "head_cover.dxf", layer = "head_wall_outer", $fn = fn(0.25));
     }
+  }
+}
+
+module head_inner() {
+  translate([0,0,head_h_upper]) {
+    rotate([0,180,0]) {
+      linear_extrude(height = head_h + tweak, scale = head_draft_inner)
+      import(file = "head_cover.dxf", layer = "head_wall_inner", $fn = fn(0.25));
+    }
+  }
+}
+
+module head_stud_holes() {
+  translate([0,0,-head_h_lower]) {
+    linear_extrude(height = head_h + tweak)
+    import(file = "head_cover.dxf", layer = "head_wall_holes", $fn = fn(0.25));
+  }
+}
+
+module head_walls()
+{
+  difference() {
+    head_outer();
+    head_inner();
+  }
 }
 
 //------------------------------------------------------------------
 
-head_walls();
-cylinder_heads();
+module additive() {
+  head_walls();
+}
+
+module subtractive() {
+  head_stud_holes();
+}
+
+//------------------------------------------------------------------
+
+difference() {
+  additive();
+  subtractive();
+}
 
 //------------------------------------------------------------------
