@@ -27,7 +27,7 @@ function fn(r) = 180 / acos(1 - (_accuracy / r));
 
 cylinder_h = 3/16;
 cylinder_d = 1 + (1/8);
-cylinder_wall = 1/8;
+cylinder_wall = 3/16;
 cylinder_r = cylinder_d / 2;
 
 dome_r = cylinder_wall + cylinder_r;
@@ -123,15 +123,51 @@ module head_base() {
 
 //------------------------------------------------------------------
 
+valve_d = 1/4;
+valve_r = valve_d / 2;
+valve_y_ofs = 1/8;
+valve_wall = 1/8;
+v2v_d = 1/2;
+
+module valve(d) {
+  translate([d,valve_y_ofs,cylinder_h - head_h_lower]) {
+    linear_extrude(height = head_h - cylinder_h)
+    circle(r = valve_r + valve_wall, $fn = fn(valve_r));
+  }
+}
+
+module valve_set(d) {
+  translate([d,0,0]) {
+    valve(-v2v_d / 2);
+    valve(v2v_d / 2);
+  }
+}
+
+module valve_sets() {
+    valve_set(-c2c_d / 2);
+    valve_set(c2c_d / 2);
+}
+
+module valve_holes() {
+  translate([0,0,-head_h_lower]) {
+    linear_extrude(height = head_h)
+    import(file = "head_cover.dxf", layer = "valve_holes", $fn = fn(1/8));
+  }
+}
+
+//------------------------------------------------------------------
+
 module additive() {
   head_walls();
   head_base();
   cylinder_domes();
+  valve_sets();
 }
 
 module subtractive() {
   head_stud_holes();
   cylinder_heads();
+  valve_holes();
 }
 
 //------------------------------------------------------------------
