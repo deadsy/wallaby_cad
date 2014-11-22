@@ -66,6 +66,7 @@ module cylinder_heads() {
 //------------------------------------------------------------------
 // cylinder head wall
 
+head_w = 1 + (3/4);
 head_h_lower = 1/2;
 head_h_upper = 3/8;
 head_h = head_h_upper + head_h_lower;
@@ -124,35 +125,60 @@ module head_base() {
 //------------------------------------------------------------------
 
 valve_d = 1/4;
-valve_r = valve_d / 2;
+valve_r = valve_d/2;
 valve_y_ofs = 1/8;
 valve_wall = 1/8;
 v2v_d = 1/2;
+valve_draft = [1.1,1.1];
 
 module valve(d) {
-  translate([d,valve_y_ofs,cylinder_h - head_h_lower]) {
-    linear_extrude(height = head_h - cylinder_h)
-    circle(r = valve_r + valve_wall, $fn = fn(valve_r));
+  translate([d,valve_y_ofs, head_h_upper]) {
+    rotate([180,0,0]) {
+      linear_extrude(height = head_h - cylinder_h, scale = valve_draft)
+      circle(r = valve_r + valve_wall, $fn = fn(1/4));
+    }
   }
 }
 
 module valve_set(d) {
   translate([d,0,0]) {
-    valve(-v2v_d / 2);
-    valve(v2v_d / 2);
+    valve(-v2v_d/2);
+    valve(v2v_d/2);
   }
 }
 
 module valve_sets() {
-    valve_set(-c2c_d / 2);
-    valve_set(c2c_d / 2);
+    valve_set(-c2c_d/2);
+    valve_set(c2c_d/2);
 }
 
 module valve_holes() {
   translate([0,0,-head_h_lower]) {
-    linear_extrude(height = head_h)
+    linear_extrude(height = head_h + tweak)
     import(file = "head_cover.dxf", layer = "valve_holes", $fn = fn(1/8));
   }
+}
+
+//------------------------------------------------------------------
+
+sp_hole_d = 21/64;
+sp_hole_r = sp_hole_d/2;
+sp2sp_d = 1 + (5/8);
+sp_hole_h = 2;
+sp_theta = 30;
+sp_y_ofs = ((7/16)/tan(sp_theta))-(head_w/2);
+
+module sp_hole(d) {
+  translate([d, sp_y_ofs, -head_h_lower]) {
+    rotate([90-sp_theta,0,0]) {
+      cylinder(h = sp_hole_h, r = sp_hole_r, $fn = fn(sp_hole_r));
+    }
+  }
+}
+
+module sp_holes() {
+	sp_hole(-sp2sp_d/2);
+	sp_hole(sp2sp_d/2);
 }
 
 //------------------------------------------------------------------
@@ -168,6 +194,7 @@ module subtractive() {
   head_stud_holes();
   cylinder_heads();
   valve_holes();
+  sp_holes();
 }
 
 //------------------------------------------------------------------
