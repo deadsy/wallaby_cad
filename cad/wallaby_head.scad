@@ -46,15 +46,17 @@ module cylinder_dome(d) {
 }
 
 module cylinder_domes() {
-  cylinder_dome(-c2c_d / 2.0);
-  cylinder_dome(c2c_d / 2.0);
+  cylinder_dome(-c2c_d/2);
+  cylinder_dome(c2c_d/2);
 }
 
 //------------------------------------------------------------------
 
+head_tweak = 1;
+
 module cylinder_head(d) {
-  translate([d,0,-head_h_lower - tweak]) {
-    cylinder(h = cylinder_h, r = cylinder_r, $fn = fn(cylinder_r));
+  translate([d,0,-head_h_lower - head_tweak]) {
+    cylinder(h = cylinder_h + head_tweak, r = cylinder_r, $fn = fn(cylinder_r));
   }
 }
 
@@ -164,14 +166,32 @@ module valve_holes() {
 sp_hole_d = 21/64;
 sp_hole_r = sp_hole_d/2;
 sp2sp_d = 1 + (5/8);
-sp_hole_h = 2;
+sp_hole_h = 3;
 sp_theta = 30;
-sp_y_ofs = ((7/16)/tan(sp_theta))-(head_w/2);
+sp_gap = (head_w/2) - ((7/16)/tan(sp_theta));
+sp_base = ((7/16)/tan(sp_theta)) - ((5/16)*sin(sp_theta));
+sp_y_ofs = -(sp_gap + sp_base);
+sp_z_ofs = (sp_base * tan(sp_theta)) - head_h_lower;
+
+module sp_boss(d) {
+  translate([d,sp_y_ofs,sp_z_ofs]) {
+    rotate([90-sp_theta,0,0]) {
+      rotate_extrude($fn = 64)
+      import(file = "sparkplug.dxf", layer = "outer");
+    }
+  }
+}
+
+module sp_bosses() {
+	sp_boss(-sp2sp_d/2);
+	sp_boss(sp2sp_d/2);
+}
 
 module sp_hole(d) {
-  translate([d, sp_y_ofs, -head_h_lower]) {
+  translate([d,sp_y_ofs,sp_z_ofs]) {
     rotate([90-sp_theta,0,0]) {
-      cylinder(h = sp_hole_h, r = sp_hole_r, $fn = fn(sp_hole_r));
+      rotate_extrude($fn = 64)
+      import(file = "sparkplug.dxf", layer = "inner");
     }
   }
 }
@@ -184,9 +204,16 @@ module sp_holes() {
 //------------------------------------------------------------------
 
 module additive() {
+
   head_walls();
   head_base();
   cylinder_domes();
+
+  intersection() {
+    sp_bosses();
+    head_outer();
+  }
+
   valve_sets();
 }
 
