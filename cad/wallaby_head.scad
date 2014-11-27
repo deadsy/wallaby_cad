@@ -183,8 +183,13 @@ module sp_boss(d) {
 }
 
 module sp_bosses() {
-	sp_boss(-sp2sp_d/2);
-	sp_boss(sp2sp_d/2);
+  intersection() {
+    head_outer();
+    union() {
+	   sp_boss(-sp2sp_d/2);
+	   sp_boss(sp2sp_d/2);
+    }
+  }
 }
 
 module sp_hole(d) {
@@ -206,14 +211,9 @@ module sp_holes() {
 module additive() {
 
   head_walls();
-  head_base();
+  //head_base();
   cylinder_domes();
-
-  intersection() {
-    sp_bosses();
-    head_outer();
-  }
-
+  sp_bosses();
   valve_sets();
 }
 
