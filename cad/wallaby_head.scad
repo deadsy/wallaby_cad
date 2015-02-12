@@ -208,6 +208,34 @@ module sp_holes() {
 
 //------------------------------------------------------------------
 
+manifold_r = 5/16;
+inlet_theta = 30.2564;
+exhaust_theta = 270 + 13.9736;
+exhaust_x_ofs = (c2c_d/2) + (v2v_d/2);
+inlet_x_ofs = (c2c_d/2) - (v2v_d/2);
+
+module manifold_set() {
+  translate([exhaust_x_ofs,valve_y_ofs,0]) {
+    rotate([-90,0,exhaust_theta]) {
+      cylinder(h=2,r=manifold_r, $fn = fn(manifold_r));
+    }
+  }
+  translate([inlet_x_ofs,valve_y_ofs,0]) {
+    rotate([-90,0,inlet_theta]) {
+      cylinder(h=2,r=manifold_r, $fn = fn(manifold_r));
+    }
+  }
+}
+
+module manifolds() {
+  manifold_set();
+  mirror([1,0,0]) {
+    manifold_set();
+  }
+}
+
+//------------------------------------------------------------------
+
 module additive() {
 
   head_walls();
@@ -215,6 +243,7 @@ module additive() {
   cylinder_domes();
   sp_bosses();
   valve_sets();
+  manifolds();
 }
 
 module subtractive() {
