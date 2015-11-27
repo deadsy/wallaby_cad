@@ -9,6 +9,9 @@ No draft version intended for 3d printing and investment casting.
 //------------------------------------------------------------------
 // scaling
 
+// note: STL is unit-less, so I'm leaving all measurements as plan
+// and handling the scaling on the print side.
+
 _desired_scale = 1.25;
 _al_shrink = 0.98;
 _scale = _desired_scale / _al_shrink;
@@ -26,7 +29,7 @@ _accuracy = 0.001;
 function fn(r) = 180 / acos(1 - (_accuracy / r));
 
 //------------------------------------------------------------------
-// cylinder domes - the metal
+// cylinder domes - or full base
 
 cylinder_h = 3/16;
 cylinder_d = 1 + (1/8);
@@ -35,13 +38,15 @@ cylinder_r = cylinder_d / 2;
 
 dome_r = cylinder_wall + cylinder_r;
 dome_h = cylinder_wall + cylinder_h;
+dome_draft = [1.04,1.04];
 
 c2c_d = (1 + (3/8));
 
+// cylinder domes - the metal
 module cylinder_dome(d) {
   translate([d,0,dome_h]) {
     rotate([0,180,0]) {
-      linear_extrude(height = dome_h)
+      linear_extrude(height = dome_h, scale = dome_draft)
       circle(r = dome_r, $fn = fn(dome_r));
     }
   }
@@ -50,6 +55,14 @@ module cylinder_dome(d) {
 module cylinder_domes() {
   cylinder_dome(-c2c_d/2);
   cylinder_dome(c2c_d/2);
+}
+
+// full cylinder head base
+module head_base() {
+  translate([0,0,0]) {
+    linear_extrude(height = dome_h)
+    import(file = "head_cover.dxf", layer = "head_wall_outer", $fn = fn(0.25));
+  }
 }
 
 //------------------------------------------------------------------
@@ -125,13 +138,14 @@ module head_walls()
 valve_d = 1/4;
 valve_r = valve_d/2;
 valve_y_ofs = 1/8;
-valve_wall = 1/8;
+valve_wall = 5/32;
 v2v_d = 1/2;
+valve_draft = [1.2,1.2];
 
 module valve(d) {
   translate([d,valve_y_ofs,head_h]) {
     rotate([180,0,0]) {
-      linear_extrude(height = head_h - cylinder_h)
+      linear_extrude(height = head_h - cylinder_h, scale = valve_draft)
       circle(r = valve_r + valve_wall, $fn = fn(1/4));
     }
   }
@@ -204,22 +218,70 @@ module sp_holes() {
 
 //------------------------------------------------------------------
 
-module additive() {
+manifold_r = 5/16;
+manifold_hole_r = 1/8;
+inlet_theta = 30.2564;
+exhaust_theta = 270 + 13.9736;
+exhaust_x_ofs = (c2c_d/2) + (v2v_d/2);
+inlet_x_ofs = (c2c_d/2) - (v2v_d/2);
 
-  
+module manifold_set(r) {
+  translate([exhaust_x_ofs,valve_y_ofs,eb_z_ofs]) {
+    rotate([-90,0,exhaust_theta]) {
+      cylinder(h=2,r=r, $fn = fn(r));
+    }
+  }
+  translate([inlet_x_ofs,valve_y_ofs,eb_z_ofs]) {
+    rotate([-90,0,inlet_theta]) {
+      cylinder(h=2,r=r, $fn = fn(r));
+    }
+  }
+}
+
+module manifold_x() {
+  manifold_set(manifold_r);
+  mirror([1,0,0]) {
+    manifold_set(manifold_r);
+  }
+}
+
+module manifolds() {
+  intersection() {
+    manifold_x();
+    head_outer();
+  }
+}
+
+module manifold_holes() {
+  manifold_set(manifold_hole_r);
+  mirror([1,0,0]) {
+    manifold_set(manifold_hole_r);
+  }
+}
+
+//------------------------------------------------------------------
+
+casting = true;
+
+module additive() {
   head_walls();
-  //head_base();
-  cylinder_domes();
+  head_base();
+  //cylinder_domes();
   sp_bosses();
   valve_sets();
-  //manifolds();
+  manifolds();
 }
 
 module subtractive() {
-  head_stud_holes();
-  cylinder_heads();
-  valve_holes();
-  sp_holes();
+  if (casting == true) {
+    cylinder_heads();
+  } else {
+    head_stud_holes();
+    cylinder_heads();
+    valve_holes();
+    sp_holes();
+    manifold_holes();
+  }
 }
 
 //------------------------------------------------------------------
