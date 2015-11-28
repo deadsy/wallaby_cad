@@ -216,6 +216,20 @@ module sp_holes() {
   sp_hole(sp2sp_d/2);
 }
 
+module sp_countersink(d) {
+  translate([d,sp_y_ofs,sp_z_ofs]) {
+    rotate([90-sp_theta,0,0]) {
+      rotate_extrude($fn = 64)
+      import(file = "sparkplug.dxf", layer = "countersink");
+    }
+  }
+}
+
+module sp_countersinks() {
+  sp_countersink(-sp2sp_d/2);
+  sp_countersink(sp2sp_d/2);
+}
+
 //------------------------------------------------------------------
 
 manifold_r = 5/16;
@@ -275,6 +289,7 @@ module additive() {
 module subtractive() {
   if (casting == true) {
     cylinder_heads();
+    sp_countersinks();
   } else {
     head_stud_holes();
     cylinder_heads();
@@ -284,12 +299,44 @@ module subtractive() {
   }
 }
 
-//------------------------------------------------------------------
+module base_model() {
+  difference() {
+    additive();
+    subtractive();
+  }
+}
 
-difference() {
-  additive();
-  subtractive();
+//------------------------------------------------------------------
+// Add machining allowances to top and bottom surfaces
+
+allowance_width = (1/16);
+
+module allowances() {
+
+  color("Red", 0.5) {
+
+    // bottom surface
+    translate([0,0,-allowance_width + tweak]) {
+      linear_extrude(height = allowance_width) projection(cut = true)
+      translate ([0,0,-tweak]) base_model();
+    }
+
+    // top surface
+    translate([0,0,head_h - tweak]) {
+      linear_extrude(height = allowance_width) projection(cut = true)
+      translate ([0,0,-head_h + tweak]) base_model();
+    }
+
+  }
 }
 
 //------------------------------------------------------------------
 
+module model() {
+  base_model();
+  allowances();
+}
+
+//------------------------------------------------------------------
+
+model();
