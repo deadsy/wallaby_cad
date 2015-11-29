@@ -16,6 +16,9 @@ _desired_scale = 1.25;
 _al_shrink = 0.98;
 _scale = _desired_scale / _al_shrink;
 
+// set casting to true to generate the casting pattern
+casting = true;
+
 //------------------------------------------------------------------
 // tweak a height to avoid rendering issues when diff-ed surfaces
 // align with each other.
@@ -275,8 +278,6 @@ module manifold_holes() {
 
 //------------------------------------------------------------------
 
-casting = true;
-
 module additive() {
   head_walls();
   head_base();
@@ -287,7 +288,7 @@ module additive() {
 }
 
 module subtractive() {
-  if (casting == true) {
+  if (casting) {
     cylinder_heads();
     sp_countersinks();
   } else {
@@ -312,21 +313,17 @@ module base_model() {
 allowance_width = (1/16);
 
 module allowances() {
-
   color("Red", 0.5) {
-
     // bottom surface
     translate([0,0,-allowance_width + tweak]) {
       linear_extrude(height = allowance_width) projection(cut = true)
       translate ([0,0,-tweak]) base_model();
     }
-
     // top surface
     translate([0,0,head_h - tweak]) {
       linear_extrude(height = allowance_width) projection(cut = true)
       translate ([0,0,-head_h + tweak]) base_model();
     }
-
   }
 }
 
@@ -334,7 +331,9 @@ module allowances() {
 
 module model() {
   base_model();
-  allowances();
+  if (casting) {
+    allowances();
+  }
 }
 
 //------------------------------------------------------------------
