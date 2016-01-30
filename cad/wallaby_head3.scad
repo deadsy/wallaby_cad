@@ -3,9 +3,17 @@
 
 Wallaby Cylinder Head
 
-No draft version intended for 3d printing and investment casting.
+No draft version for 3d printing and lost-PLA investment casting.
 
 */
+//-----------------------------------------------------------------
+// casting == true
+// add: machining allowances
+// remove: machined features
+
+casting = false;
+//casting = true;
+
 //-----------------------------------------------------------------
 // scaling
 
@@ -61,19 +69,89 @@ head_l = scale(4.30/1.25);
 head_w = scale(2.33/1.25);
 head_h = scale(7/8);
 head_corner_r = scale((5/32)/1.25);
+head_wall_t = scale(0.154);
+
+stud_hole_r = scale(1/16);
+stud_boss_r = scale(3/16);
+stud_hole_dy = scale(11/16);
+stud_hole_dx0 = scale(7/16);
+stud_hole_dx1 = scale(1.066);
+
+stud_locations = [
+ [stud_hole_dx0 + stud_hole_dx1, 0],
+ [stud_hole_dx0 + stud_hole_dx1, stud_hole_dy],
+ [stud_hole_dx0 + stud_hole_dx1, -stud_hole_dy],
+ [stud_hole_dx0, stud_hole_dy],
+ [stud_hole_dx0, -stud_hole_dy],
+ [-stud_hole_dx0 - stud_hole_dx1, 0],
+ [-stud_hole_dx0 - stud_hole_dx1, stud_hole_dy],
+ [-stud_hole_dx0 - stud_hole_dx1, -stud_hole_dy],
+ [-stud_hole_dx0, stud_hole_dy],
+ [-stud_hole_dx0, -stud_hole_dy],
+];
 
 //-----------------------------------------------------------------
 
-// return a 2D polygon for the outer head
-module head_outer() {
-  points = [
-    [0,0],
-    [head_l,0],
-    [head_l,head_w]
-  ];
-  polygon(points=points);
+module head_wall_outer_2d() {
+  square([head_l, head_w], center = true);
 }
 
-head_outer();
+module head_wall_inner_2d() {
+  rounded(head_corner_r) inverse() union() {
+    inverse() inset(head_wall_t) head_wall_outer_2d();
+    head_wall_studs(stud_boss_r);
+  }
+}
+
+module head_wall_studs(r) {
+  for (p = stud_locations) {
+    translate([p[0], p[1], 0]) circle(r, $fn=facets(r));
+  }
+}
+
+module head_wall_2d() {
+  difference() {
+    rounded(head_corner_r) head_wall_outer_2d();
+    rounded(head_corner_r) head_wall_inner_2d();
+  }
+}
+
+module head_wall() {
+    linear_extrude(head_h, convexity=2) head_wall_2d();
+}
+
+module head_stud_holes() {
+  translate([0,0,-epsilon]) linear_extrude(head_h + (2 * epsilon)){
+    head_wall_studs(stud_hole_r);
+  }
+}
+
+//-----------------------------------------------------------------
+
+module additive() {
+  head_wall();
+}
+
+module subtractive() {
+  if (casting) {
+  } else {
+    head_stud_holes();
+  }
+}
+
+module base_model() {
+  difference() {
+    additive();
+    subtractive();
+  }
+}
+
+//-----------------------------------------------------------------
+
+module model() {
+  base_model();
+}
+
+model();
 
 //-----------------------------------------------------------------
