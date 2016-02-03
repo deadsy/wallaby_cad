@@ -77,7 +77,7 @@ dome_draft = [1.04,1.04];
 c2c_d = scale(1 + (3/8));
 
 module head_base() {
-  linear_extrude(dome_h, convexity=2) head_wall_outer_2d();
+  linear_extrude(dome_h, convexity=2) inset(epsilon) head_wall_outer_2d();
 }
 
 //------------------------------------------------------------------
@@ -178,10 +178,11 @@ valve_draft = [1.2,1.2];
 module valve(d, mode) {
   translate([d,valve_y_ofs,head_h]) {
     rotate([180,0,0]) {
-      if (mode == "body") {
-        linear_extrude(height = head_h - cylinder_h, scale = valve_draft)
+      if (mode == "boss") {
+        linear_extrude(height = head_h - cylinder_h - epsilon, scale = valve_draft)
           circle(r = valve_r + valve_wall, $fn = facets(valve_r + valve_wall));
-      } else {
+      }
+      if (mode == "hole") {
         translate([0,0,-epsilon]) linear_extrude(height = head_h + (2 * epsilon))
           circle(r = valve_r, $fn = facets(valve_r));
       }
@@ -199,6 +200,76 @@ module valve_set(d, mode) {
 module valve_sets(mode) {
     valve_set(-c2c_d/2, mode);
     valve_set(c2c_d/2, mode);
+}
+
+//------------------------------------------------------------------
+// spark plug bosses
+
+sp2sp_d = scale(1 + (5/8));
+sp_theta = 30;
+
+sp_boss_r1 = scale(21/64);
+sp_boss_r2 = scale(15/32);
+sp_boss_h1 = scale(0.79);
+sp_boss_h2 = scale(0.94);
+sp_boss_h3 = scale(2);
+
+sp_hole_d = scale(21/64);
+sp_hole_r = sp_hole_d/2;
+sp_hole_h = scale(1);
+
+sp_cb_h1 = scale(1);
+sp_cb_h2 = scale(2);
+sp_cb_r = scale(5/16);
+
+sp_hyp = sp_hole_h + sp_cb_r * tan(sp_theta);
+sp_y_ofs = (sp_hyp * cos(sp_theta)) - (head_w/2);
+sp_z_ofs = (head_h/2) - (sp_hyp * sin(sp_theta));
+
+module sparkplug_feature(d, mode) {
+  translate([d,sp_y_ofs,sp_z_ofs]) rotate([90-sp_theta,0,0]) {
+    if (mode == "boss") {
+      points = [
+        [0,0],
+        [sp_boss_r1,0],
+        [sp_boss_r1,sp_boss_h1],
+        [sp_boss_r2,sp_boss_h2],
+        [sp_boss_r2,sp_boss_h3],
+        [0,sp_boss_h3],
+      ];
+      rotate_extrude($fn=facets(sp_boss_r2)) polygon(points=points, convexity=2);
+    }
+    if (mode == "hole") {
+      points = [
+        [0, 0],
+        [sp_hole_r,0],
+        [sp_hole_r,sp_hole_h + (2 * epsilon)],
+        [0,sp_hole_h + (2 * epsilon)],
+      ];
+      translate([0,0,-epsilon]) rotate_extrude($fn=facets(sp_hole_r)) polygon(points=points, convexity=2);
+    }
+    if (mode == "counterbore") {
+      points = [
+        [0,sp_cb_h1],
+        [sp_cb_r,sp_cb_h1],
+        [sp_cb_r,sp_cb_h2 + (2 * epsilon)],
+        [0,sp_cb_h2 + (2 * epsilon)],
+      ];
+      translate([0,0,-epsilon]) rotate_extrude($fn=facets(sp_cb_r)) polygon(points=points, convexity=2);
+    }
+  }
+}
+
+module sparkplugs(mode) {
+  sparkplug_feature(-sp2sp_d/2, mode);
+  sparkplug_feature(sp2sp_d/2, mode);
+}
+
+module sparkplugs_boss() {
+  intersection () {
+    sparkplugs("boss");
+    head_outer();
+  }
 }
 
 //------------------------------------------------------------------
@@ -250,7 +321,8 @@ module manifold_holes() {
 module additive() {
   head_wall();
   head_base();
-  valve_sets("body");
+  valve_sets("boss");
+  sparkplugs_boss();
   manifolds();
 }
 
@@ -260,6 +332,8 @@ module subtractive() {
     head_stud_holes();
     cylinder_heads();
     valve_sets("hole");
+    sparkplugs("hole");
+    sparkplugs("counterbore");
     manifold_holes();
   }
 }
