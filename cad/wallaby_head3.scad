@@ -162,8 +162,34 @@ module head_outer() {
 //-----------------------------------------------------------------
 // exhaust bosses
 
+eb_side_r = scale(5/32);
+eb_main_r = scale(5/16);
+eb_c2c_d = scale(13/16);
+eb_d = eb_c2c_d/2;
+
+eb_y_ofs = scale(0);
 eb_z_ofs = scale(1/2);
-eb_h = head_l + scale(3/16);
+eb_h = scale(1/8);
+eb_draft = [1.17,1.17];
+
+module exhaust_boss_2d() {
+  hull() {
+    circle(r=eb_main_r, $fn=facets(eb_main_r));
+    translate([0,eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
+    translate([0,-eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
+  }
+}
+
+module exhaust_boss(d, theta) {
+  translate([d,eb_y_ofs,eb_z_ofs]) rotate([0,theta,0])
+  linear_extrude(height = eb_h, scale = eb_draft)
+    exhaust_boss_2d();
+}
+
+module exhaust_bosses() {
+  exhaust_boss(head_l/2 + eb_h - epsilon, -90);
+  exhaust_boss(-head_l/2 - eb_h + epsilon, 90);
+}
 
 //------------------------------------------------------------------
 // valve bosses
@@ -324,6 +350,7 @@ module additive() {
   valve_sets("boss");
   sparkplugs_boss();
   manifolds();
+  exhaust_bosses();
 }
 
 module subtractive() {
