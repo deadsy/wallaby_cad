@@ -21,8 +21,9 @@ desired_scale = 1.25;
 mm_per_inch = 25.4;
 al_shrink = 1/0.98; // ~2%
 pla_shrink = 1/0.998; //~0.2%
+abs_shrink = 1/0.995; //~0.5%
 
-function scale(x) = x * desired_scale * mm_per_inch * al_shrink * pla_shrink;
+function scale(x) = x * desired_scale * mm_per_inch * abs_shrink;
 
 //-----------------------------------------------------------------
 // control the number of facets on cylinders
@@ -80,18 +81,22 @@ module head_base() {
   linear_extrude(dome_h, convexity=2) inset(epsilon) head_wall_outer_2d();
 }
 
-//------------------------------------------------------------------
-// cylinder heads - the empty space
-
-module cylinder_head(d) {
-  translate([d, 0 , -epsilon]) {
-    cylinder(h = cylinder_h + epsilon, r = cylinder_r, $fn=facets(cylinder_r));
+module cylinder_head(d, mode) {
+  if (mode == "dome") {
+    translate([d,0,dome_h]) rotate([0,180,0]) {
+      linear_extrude(height = dome_h, scale = dome_draft) circle(r = dome_r, $fn = facets(dome_r));
+    }
+  }
+  if (mode == "chamber") {
+    translate([d, 0 , -epsilon]) {
+      cylinder(h = cylinder_h + epsilon, r = cylinder_r, $fn=facets(cylinder_r));
+    }
   }
 }
 
-module cylinder_heads() {
-  cylinder_head(-c2c_d/2);
-  cylinder_head(c2c_d/2);
+module cylinder_heads(mode) {
+  cylinder_head(-c2c_d/2, mode);
+  cylinder_head(c2c_d/2, mode);
 }
 
 //-----------------------------------------------------------------
@@ -164,31 +169,45 @@ module head_outer() {
 
 eb_side_r = scale(5/32);
 eb_main_r = scale(5/16);
+eb_hole_r = scale(3/16);
 eb_c2c_d = scale(13/16);
 eb_d = eb_c2c_d/2;
 
-eb_y_ofs = scale(0);
+eb_y_ofs = (head_w/2) - eb_d - eb_side_r;
 eb_z_ofs = scale(1/2);
 eb_h = scale(1/8);
-eb_draft = [1.17,1.17];
+eb_draft = [0.9,0.9];
 
-module exhaust_boss_2d() {
-  hull() {
-    circle(r=eb_main_r, $fn=facets(eb_main_r));
-    translate([0,eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
-    translate([0,-eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
+module exhaust_boss_2d(mode) {
+  if (mode == "body") {
+    hull() {
+      circle(r=eb_main_r, $fn=facets(eb_main_r));
+      translate([0,eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
+      translate([0,-eb_d,0]) circle(r=eb_side_r, $fn=facets(eb_side_r));
+    }
+  }
+  if (mode == "hole") {
+    circle(r=eb_hole_r, $fn=facets(eb_hole_r));
   }
 }
 
-module exhaust_boss(d, theta) {
-  translate([d,eb_y_ofs,eb_z_ofs]) rotate([0,theta,0])
-  linear_extrude(height = eb_h, scale = eb_draft)
-    exhaust_boss_2d();
+module exhaust_boss(d, theta, mode) {
+  if (mode == "body") {
+    translate([d,eb_y_ofs,eb_z_ofs]) rotate([0,theta,0]) union() {
+      linear_extrude(height = eb_h, scale = eb_draft) exhaust_boss_2d(mode);
+      translate([0,0,-eb_h + epsilon]) linear_extrude(height = eb_h) exhaust_boss_2d(mode);
+    }
+  }
+  if (mode == "hole") {
+    translate([d,eb_y_ofs,eb_z_ofs]) rotate([0,theta,0]) {
+      translate([0,0,eb_h/2]) linear_extrude(height = eb_h) exhaust_boss_2d(mode);
+    }
+  }
 }
 
-module exhaust_bosses() {
-  exhaust_boss(head_l/2 + eb_h - epsilon, -90);
-  exhaust_boss(-head_l/2 - eb_h + epsilon, 90);
+module exhaust_bosses(mode) {
+  exhaust_boss(head_l/2 - epsilon, 90, mode);
+  exhaust_boss(-head_l/2 + epsilon, -90, mode);
 }
 
 //------------------------------------------------------------------
@@ -347,20 +366,22 @@ module manifold_holes() {
 module additive() {
   head_wall();
   head_base();
+  //cylinder_heads("dome");
   valve_sets("boss");
   sparkplugs_boss();
   manifolds();
-  exhaust_bosses();
+  exhaust_bosses("body");
 }
 
 module subtractive() {
   if (casting) {
   } else {
     head_stud_holes();
-    cylinder_heads();
+    cylinder_heads("chamber");
     valve_sets("hole");
     sparkplugs("hole");
     sparkplugs("counterbore");
+    exhaust_bosses("hole");
     manifold_holes();
   }
 }
@@ -379,5 +400,6 @@ module model() {
 }
 
 model();
+
 
 //-----------------------------------------------------------------
