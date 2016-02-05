@@ -11,8 +11,8 @@ No draft version for 3d printing and lost-PLA investment casting.
 // add: machining allowances
 // remove: machined features
 
-casting = false;
-//casting = true;
+//casting = false;
+casting = true;
 
 //-----------------------------------------------------------------
 // scaling
@@ -176,7 +176,7 @@ eb_d = eb_c2c_d/2;
 eb_y_ofs = (head_w/2) - eb_d - eb_side_r;
 eb_z_ofs = scale(1/2);
 eb_h = scale(1/8);
-eb_draft = [0.9,0.9];
+eb_draft = [0.97,0.97];
 
 module exhaust_boss_2d(mode) {
   if (mode == "body") {
@@ -282,7 +282,7 @@ module sparkplug_feature(d, mode) {
         [sp_boss_r2,sp_boss_h3],
         [0,sp_boss_h3],
       ];
-      rotate_extrude($fn=facets(sp_boss_r2)) polygon(points=points, convexity=2);
+      rotate_extrude($fn=facets(sp_boss_r2)) rounded(sp_boss_r2 * 0.3) polygon(points=points, convexity=2);
     }
     if (mode == "hole") {
       points = [
@@ -375,6 +375,8 @@ module additive() {
 
 module subtractive() {
   if (casting) {
+    //cylinder_heads("chamber");
+    //sparkplugs("counterbore");
   } else {
     head_stud_holes();
     cylinder_heads("chamber");
@@ -394,12 +396,34 @@ module base_model() {
 }
 
 //-----------------------------------------------------------------
+// Add machining allowances to top and bottom surfaces
+
+allowance_width = scale(1/32);
+
+module allowances() {
+  color("Red", 0.5) {
+    // bottom surface
+    translate([0,0,-allowance_width + epsilon]) {
+      linear_extrude(height = allowance_width) projection(cut = true)
+      translate ([0,0,-epsilon]) base_model();
+    }
+    // top surface
+    translate([0,0,head_h - epsilon]) {
+      linear_extrude(height = allowance_width) projection(cut = true)
+      translate ([0,0,-head_h + epsilon]) base_model();
+    }
+  }
+}
+
+//-----------------------------------------------------------------
 
 module model() {
   base_model();
+  if (casting) {
+    allowances();
+  }
 }
 
 model();
-
 
 //-----------------------------------------------------------------
