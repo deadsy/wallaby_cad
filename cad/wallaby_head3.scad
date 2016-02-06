@@ -11,15 +11,15 @@ No draft version for 3d printing and lost-PLA investment casting.
 // add: machining allowances
 // remove: machined features
 
-//casting = false;
-casting = true;
+casting = false;
+//casting = true;
 
 //-----------------------------------------------------------------
 // scaling
 
 desired_scale = 1.25;
 mm_per_inch = 25.4;
-al_shrink = 1/0.98; // ~2%
+al_shrink = 1/0.99; // ~1%
 pla_shrink = 1/0.998; //~0.2%
 abs_shrink = 1/0.995; //~0.5%
 
@@ -37,17 +37,6 @@ epsilon = 0.05;
 //------------------------------------------------------------------
 // rounded/filleted edges
 
-module outset(d=1) {
-  minkowski() {
-    circle(r=d, $fn=facets(d));
-    children(0);
-  }
-}
-
-module inset(d=1) {
-  render() inverse() outset(d=d) inverse() children(0);
-}
-
 module inverse() {
   difference() {
     square(1e5, center=true);
@@ -56,11 +45,11 @@ module inverse() {
 }
 
 module rounded(r=1) {
-  outset(d=r) inset(d=r) children(0);
+  offset(r=r, $fn=facets(r)) offset(r=-r, $fn=facets(r)) children(0);
 }
 
 module filleted(r=1) {
-  inset(d=r) render() outset(d=r) children(0);
+  offset(r=-r, $fn=facets(r)) render() offset(r=r, $fn=facets(r)) children(0);
 }
 
 //-----------------------------------------------------------------
@@ -78,7 +67,7 @@ dome_draft = [1.04,1.04];
 c2c_d = scale(1 + (3/8));
 
 module head_base() {
-  linear_extrude(dome_h, convexity=2) inset(epsilon) head_wall_outer_2d();
+  linear_extrude(dome_h, convexity=2) offset(r=-epsilon) head_wall_outer_2d();
 }
 
 module cylinder_head(d, mode) {
@@ -148,7 +137,7 @@ module head_wall_outer_2d() {
 
 module head_wall_inner_2d() {
   rounded(head_corner_r) inverse() union() {
-    inverse() inset(head_wall_t) head_wall_outer_2d();
+    inverse() offset(r=-head_wall_t) head_wall_outer_2d();
     head_wall_studs(stud_boss_r);
   }
 }
@@ -282,7 +271,9 @@ module sparkplug_feature(d, mode) {
         [sp_boss_r2,sp_boss_h3],
         [0,sp_boss_h3],
       ];
-      rotate_extrude($fn=facets(sp_boss_r2)) rounded(sp_boss_r2 * 0.3) polygon(points=points, convexity=2);
+      rotate_extrude($fn=facets(sp_boss_r2))
+        filleted(sp_boss_r1 * 0.3) rounded(sp_boss_r2 * 0.3)
+        polygon(points=points, convexity=2);
     }
     if (mode == "hole") {
       points = [
