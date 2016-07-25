@@ -11,8 +11,8 @@ No draft version for 3d printing and lost-PLA investment casting.
 // add: machining allowances
 // remove: machined features
 
-casting = false;
-//casting = true;
+//casting = false;
+casting = true;
 
 //-----------------------------------------------------------------
 // scaling
@@ -23,7 +23,7 @@ al_shrink = 1/0.99; // ~1%
 pla_shrink = 1/0.998; //~0.2%
 abs_shrink = 1/0.995; //~0.5%
 
-function scale(x) = x * desired_scale * mm_per_inch * abs_shrink;
+function scale(x) = x * desired_scale * mm_per_inch * pla_shrink;
 
 //-----------------------------------------------------------------
 // control the number of facets on cylinders
@@ -200,6 +200,18 @@ module exhaust_bosses(mode) {
 }
 
 //------------------------------------------------------------------
+// put a recess into the plastic so I can jam the wax sprue into it
+
+sprue_d = scale(3/10);
+sprue_h = scale(1/5);
+
+module sprue_hole() {
+  translate([-head_l/2 - eb_h, eb_y_ofs, eb_z_ofs])
+  rotate([0,90,0])
+  cylinder(h = sprue_h, d = sprue_d, $fn = facets(sprue_d));
+}
+
+//------------------------------------------------------------------
 // valve bosses
 
 valve_d = scale(1/4);
@@ -366,6 +378,7 @@ module additive() {
 
 module subtractive() {
   if (casting) {
+    sprue_hole();
     //cylinder_heads("chamber");
     //sparkplugs("counterbore");
   } else {
