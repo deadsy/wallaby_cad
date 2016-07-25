@@ -23,7 +23,7 @@ al_shrink = 1/0.99; // ~1%
 pla_shrink = 1/0.998; //~0.2%
 abs_shrink = 1/0.995; //~0.5%
 
-function scale(x) = x * desired_scale * mm_per_inch * pla_shrink;
+function scale(x) = x * desired_scale * mm_per_inch * al_shrink * pla_shrink;
 
 //-----------------------------------------------------------------
 // control the number of facets on cylinders
